@@ -2,191 +2,191 @@
 <html lang="zh">
 
 <head>
-    <meta charset="UTF-8" />
-    <title>水印助手</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <style>
-        body {
-            margin: auto;
-            max-width: 60vh;
-        }
+  <meta charset="UTF-8" />
+  <title>水印助手</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <style>
+    body {
+      margin: auto;
+      max-width: 60vh;
+    }
 
-        img {
-            border: 0;
-            border-radius: 5px;
-            width: 100%;
-            box-sizing: border-box;
-        }
+    img {
+      border: 0;
+      border-radius: 5px;
+      width: 100%;
+      box-sizing: border-box;
+    }
 
-        canvas {
-            width: 0;
-            height: 0;
-        }
+    canvas {
+      width: 0;
+      height: 0;
+    }
 
-        label {
-            display: flex;
-            align-items: center;
-            margin-top: 8px;
-        }
+    label {
+      display: flex;
+      align-items: center;
+      margin-top: 8px;
+    }
 
-        #drop-area {
-            border: 2px dashed #ccc;
-            padding: 10px;
-            text-align: center;
-        }
+    #drop-area {
+      border: 2px dashed #ccc;
+      padding: 10px;
+      text-align: center;
+    }
 
-        #upload-input {
-            display: none;
-        }
-    </style>
+    #upload-input {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
-    <canvas></canvas>
-    <a id="imglink" download><img /></a>
-    <div>
-        <div id="drop-area">
-            <input id="upload-input" type="file" accept="image/*" />
-            拖放或点击选择图片
-        </div>
-        <label>
-            水印文字：
-            <input id="content" type="text" value="仅供XX实名认证使用" />
-        </label>
-        <label>
-            水印颜色：
-            <input id="color" type="color" value="#666666" />
-        </label>
-        <label>
-            图片宽度：
-            <input id="width" type="number" value="2048" />
-        </label>
-        <label>
-            图片质量：
-            <input id="quality" type="range" min="1" max="100" value="80" /> <span id="imgsize"></span>
-        </label>
-        <label>
-            不透明度：
-            <input id="alpha" type="range" min="10" max="100" value="20" />
-        </label>
-        <label>
-            文字大小：
-            <input id="size" type="range" min="1" max="10" value="4" />
-        </label>
-        <label>
-            旋转角度：
-            <input id="angle" type="range" min="-180" max="180" value="-45">
-        </label>
-        <label>
-            水印行距：
-            <input id="gap" type="range" min="20" max="300" value="150" />
-        </label>
-        <label>
-            水印字体：
-            <input id="font" type="text" value="sans-serif" />
-        </label>
-        <label>
-            <a id="savelink" href="javascript:alert('请先打开图片')" download>保存图片</a>
-        </label>
+  <canvas></canvas>
+  <a id="imglink" download><img /></a>
+  <div>
+    <div id="drop-area">
+      <input id="upload-input" type="file" accept="image/*" />
+      拖放或点击选择图片
     </div>
-    <script>
-        var img = null;
-        document.addEventListener('change', function (ev) {
-            if (ev.target.type === 'file') {
-                if (!ev.target.files.length) return;
-                var file = ev.target.files[0];
-                handleImageUpload(file);
-            } else {
-                repaint();
-            }
-        });
+    <label>
+      水印文字：
+      <input id="content" type="text" value="仅供XX实名认证使用" />
+    </label>
+    <label>
+      水印颜色：
+      <input id="color" type="color" value="#666666" />
+    </label>
+    <label>
+      图片宽度：
+      <input id="width" type="number" value="2048" />
+    </label>
+    <label>
+      图片质量：
+      <input id="quality" type="range" min="1" max="100" value="80" /> <span id="imgsize"></span>
+    </label>
+    <label>
+      不透明度：
+      <input id="alpha" type="range" min="10" max="100" value="20" />
+    </label>
+    <label>
+      文字大小：
+      <input id="size" type="range" min="1" max="10" value="4" />
+    </label>
+    <label>
+      旋转角度：
+      <input id="angle" type="range" min="-180" max="180" value="-45">
+    </label>
+    <label>
+      水印行距：
+      <input id="gap" type="range" min="20" max="300" value="150" />
+    </label>
+    <label>
+      水印字体：
+      <input id="font" type="text" value="sans-serif" />
+    </label>
+    <label>
+      <a id="savelink" href="javascript:alert('请先打开图片')" download>保存图片</a>
+    </label>
+  </div>
+  <script>
+    var img = null;
+    document.addEventListener('change', function (ev) {
+      if (ev.target.type === 'file') {
+        if (!ev.target.files.length) return;
+        var file = ev.target.files[0];
+        handleImageUpload(file);
+      } else {
+        repaint();
+      }
+    });
 
-        function repaint() {
-            if (!img) return;
-            var ctx = document.getElementsByTagName('canvas')[0].getContext('2d');
-            const width = document.getElementById('width').value;
-            const height = (img.height * width) / img.width;
-            ctx.canvas.width = width;
-            ctx.canvas.height = height;
-            var maxSize = Math.max(height, width);
-            ctx.restore();
-            ctx.drawImage(img, 0, 0, width, height);
-            ctx.fillStyle = document.getElementById('color').value;
-            ctx.globalAlpha = document.getElementById('alpha').value / 100;
-            var size = (document.getElementById('size').value * maxSize) / 100;
-            ctx.font = size + 'px "' + document.getElementById('font').value + '"';
-            ctx.textBaseline = 'middle';
-            ctx.rotate(document.getElementById('angle').value * Math.PI / 180);
-            var gap = (size * document.getElementById('gap').value) / 100;
-            var content = document.getElementById('content').value;
-            if (!content.length) return;
-            var limit = Math.sqrt(2 * (maxSize * maxSize));
-            var breaker = ctx.measureText(content).width;
-            for (
-                var h = -maxSize, even = false;
-                h <= limit;
-                h += size + gap, even = !even
-            ) {
-                for (
-                    var v = -maxSize - (even ? breaker / 2 : 0);
-                    v <= limit + (even ? breaker / 2 : 0);
-                    v += breaker + size
-                ) {
-                    ctx.fillText(content, v, h);
-                }
-            }
-
-            const quality = document.getElementById('quality').value;
-            ctx.canvas.toBlob(
-                (e) => {
-                    const url = URL.createObjectURL(e);
-                    document.getElementById('imgsize').innerHTML = `(${Math.ceil(e.size / 1024)} KB)`;
-                    document.getElementsByTagName('img')[0].src = url;
-                    document.getElementById('imglink').href = url;
-                    document.getElementById('savelink').href = url;
-                },
-                'image/jpeg',
-                quality / 100
-            );
+    function repaint() {
+      if (!img) return;
+      var ctx = document.getElementsByTagName('canvas')[0].getContext('2d');
+      const width = document.getElementById('width').value;
+      const height = (img.height * width) / img.width;
+      ctx.canvas.width = width;
+      ctx.canvas.height = height;
+      var maxSize = Math.max(height, width);
+      ctx.restore();
+      ctx.drawImage(img, 0, 0, width, height);
+      ctx.fillStyle = document.getElementById('color').value;
+      ctx.globalAlpha = document.getElementById('alpha').value / 100;
+      var size = (document.getElementById('size').value * maxSize) / 100;
+      ctx.font = size + 'px "' + document.getElementById('font').value + '"';
+      ctx.textBaseline = 'middle';
+      ctx.rotate(document.getElementById('angle').value * Math.PI / 180);
+      var gap = (size * document.getElementById('gap').value) / 100;
+      var content = document.getElementById('content').value;
+      if (!content.length) return;
+      var limit = Math.sqrt(2 * (maxSize * maxSize));
+      var breaker = ctx.measureText(content).width;
+      for (
+        var h = -maxSize, even = false;
+        h <= limit;
+        h += size + gap, even = !even
+      ) {
+        for (
+          var v = -maxSize - (even ? breaker / 2 : 0);
+          v <= limit + (even ? breaker / 2 : 0);
+          v += breaker + size
+        ) {
+          ctx.fillText(content, v, h);
         }
-        function createBitmap(blob, callback) {
-            var img = document.createElement('img');
-            img.addEventListener('load', function () {
-                callback(this);
-            });
-            img.src = URL.createObjectURL(blob);
-        }
+      }
 
-        function handleImageUpload(file) {
-            createBitmap(file, function (result) {
-                img = result;
-                repaint();
-            });
-            var newName = file.name.split('.');
-            newName.splice(-1, 0, 'watermarked');
-            document.getElementById('imglink').download = newName.join('.');
-            document.getElementById('savelink').download = newName.join('.');
-        }
+      const quality = document.getElementById('quality').value;
+      ctx.canvas.toBlob(
+        (e) => {
+          const url = URL.createObjectURL(e);
+          document.getElementById('imgsize').innerHTML = `(${Math.ceil(e.size / 1024)} KB)`;
+          document.getElementsByTagName('img')[0].src = url;
+          document.getElementById('imglink').href = url;
+          document.getElementById('savelink').href = url;
+        },
+        'image/jpeg',
+        quality / 100
+      );
+    }
+    function createBitmap(blob, callback) {
+      var img = document.createElement('img');
+      img.addEventListener('load', function () {
+        callback(this);
+      });
+      img.src = URL.createObjectURL(blob);
+    }
 
-        var dropArea = document.getElementById('drop-area');
-        dropArea.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            dropArea.style.backgroundColor = '#f2f2f2';
-        });
-        dropArea.addEventListener('dragleave', function (e) {
-            e.preventDefault();
-            dropArea.style.backgroundColor = '';
-        });
-        dropArea.addEventListener('drop', function (e) {
-            e.preventDefault();
-            dropArea.style.backgroundColor = '';
-            var file = e.dataTransfer.files[0];
-            handleImageUpload(file);
-        });
-        dropArea.addEventListener('click', function () {
-            document.getElementById('upload-input').click();
-        });
-    </script>
+    function handleImageUpload(file) {
+      createBitmap(file, function (result) {
+        img = result;
+        repaint();
+      });
+      var newName = file.name.split('.');
+      newName.splice(-1, 0, 'watermarked');
+      document.getElementById('imglink').download = newName.join('.');
+      document.getElementById('savelink').download = newName.join('.');
+    }
+
+    var dropArea = document.getElementById('drop-area');
+    dropArea.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      dropArea.style.backgroundColor = '#f2f2f2';
+    });
+    dropArea.addEventListener('dragleave', function (e) {
+      e.preventDefault();
+      dropArea.style.backgroundColor = '';
+    });
+    dropArea.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dropArea.style.backgroundColor = '';
+      var file = e.dataTransfer.files[0];
+      handleImageUpload(file);
+    });
+    dropArea.addEventListener('click', function () {
+      document.getElementById('upload-input').click();
+    });
+  </script>
 </body>
 
 </html>
