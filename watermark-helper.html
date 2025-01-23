@@ -19,8 +19,7 @@
     }
 
     canvas {
-      width: 0;
-      height: 0;
+      display: none;
     }
 
     label {
@@ -49,143 +48,115 @@
       <input id="upload-input" type="file" accept="image/*" />
       拖放或点击选择图片
     </div>
-    <label>
-      水印文字：
-      <input id="content" type="text" value="仅供XX实名认证使用" />
-    </label>
-    <label>
-      水印颜色：
-      <input id="color" type="color" value="#666666" />
-    </label>
-    <label>
-      图片宽度：
-      <input id="width" type="number" value="2048" />
-    </label>
-    <label>
-      图片质量：
-      <input id="quality" type="range" min="1" max="100" value="80" /> <span id="imgsize"></span>
-    </label>
-    <label>
-      不透明度：
-      <input id="alpha" type="range" min="10" max="100" value="20" />
-    </label>
-    <label>
-      文字大小：
-      <input id="size" type="range" min="1" max="10" value="4" />
-    </label>
-    <label>
-      旋转角度：
-      <input id="angle" type="range" min="-180" max="180" value="-45">
-    </label>
-    <label>
-      水印行距：
-      <input id="gap" type="range" min="20" max="300" value="150" />
-    </label>
-    <label>
-      水印字体：
-      <input id="font" type="text" value="sans-serif" />
-    </label>
-    <label>
-      <a id="savelink" href="javascript:alert('请先打开图片')" download>保存图片</a>
-    </label>
+    <label> 水印文字： <input id="content" type="text" value="仅供XX实名认证使用" /> </label>
+    <label> 水印颜色： <input id="color" type="color" value="#666666" /> </label>
+    <label> 图片宽度： <input id="width" type="number" value="2048" /> </label>
+    <label> 图片质量： <input id="quality" type="range" min="1" max="100" value="80" /> <span id="imgsize"></span> </label>
+    <label> 不透明度： <input id="alpha" type="range" min="10" max="100" value="20" /> </label>
+    <label> 文字大小： <input id="size" type="range" min="1" max="10" value="4" /> </label>
+    <label> 旋转角度： <input id="angle" type="range" min="-180" max="180" value="-45" /> </label>
+    <label> 水印行距： <input id="gap" type="range" min="20" max="300" value="150" /> </label>
+    <label> 水印字体： <input id="font" type="text" value="sans-serif" /> </label>
+    <label> <a id="savelink" href="javascript:alert('请先打开图片')" download>保存图片</a> </label>
   </div>
   <script>
-    var img = null;
-    document.addEventListener('change', function (ev) {
-      if (ev.target.type === 'file') {
-        if (!ev.target.files.length) return;
-        var file = ev.target.files[0];
-        handleImageUpload(file);
-      } else {
-        repaint();
-      }
-    });
+    const $ = (s) => document.querySelector(s);
+    const canvas = $('canvas');
+    const ctx = canvas.getContext('2d');
+    const imgEl = $('img');
+    const imgLink = $('#imglink');
+    const saveLink = $('#savelink');
+    const imgSize = $('#imgsize');
+    let img = null;
 
-    function repaint() {
+    const updateImage = (blob) => {
+      const url = URL.createObjectURL(blob);
+      imgSize.innerHTML = `(${Math.ceil(blob.size / 1024)} KB)`;
+      imgEl.src = url;
+      imgLink.href = url;
+      saveLink.href = url;
+    };
+
+    const drawWatermark = () => {
       if (!img) return;
-      var ctx = document.getElementsByTagName('canvas')[0].getContext('2d');
-      const width = document.getElementById('width').value;
+
+      const width = +$('#width').value;
       const height = (img.height * width) / img.width;
-      ctx.canvas.width = width;
-      ctx.canvas.height = height;
-      var maxSize = Math.max(height, width);
-      ctx.restore();
+      canvas.width = width;
+      canvas.height = height;
+
       ctx.drawImage(img, 0, 0, width, height);
-      ctx.fillStyle = document.getElementById('color').value;
-      ctx.globalAlpha = document.getElementById('alpha').value / 100;
-      var size = (document.getElementById('size').value * maxSize) / 100;
-      ctx.font = size + 'px "' + document.getElementById('font').value + '"';
+      ctx.fillStyle = $('#color').value;
+      ctx.globalAlpha = $('#alpha').value / 100;
+
+      const maxSize = Math.max(height, width);
+      const size = ($('#size').value * maxSize) / 100;
+      const gap = (size * $('#gap').value) / 100;
+      const angle = ($('#angle').value * Math.PI) / 180;
+      const content = $('#content').value;
+
+      ctx.font = `${size}px "${$('#font').value}"`;
       ctx.textBaseline = 'middle';
-      ctx.rotate(document.getElementById('angle').value * Math.PI / 180);
-      var gap = (size * document.getElementById('gap').value) / 100;
-      var content = document.getElementById('content').value;
-      if (!content.length) return;
-      var limit = Math.sqrt(2 * (maxSize * maxSize));
-      var breaker = ctx.measureText(content).width;
-      for (
-        var h = -maxSize, even = false;
-        h <= limit;
-        h += size + gap, even = !even
-      ) {
-        for (
-          var v = -maxSize - (even ? breaker / 2 : 0);
-          v <= limit + (even ? breaker / 2 : 0);
-          v += breaker + size
-        ) {
-          ctx.fillText(content, v, h);
+      ctx.rotate(angle);
+
+      if (content.length) {
+        const limit = Math.sqrt(2 * maxSize * maxSize);
+        const breaker = ctx.measureText(content).width;
+        for (let h = -maxSize, even = false; h <= limit; h += size + gap, even = !even) {
+          for (let v = -maxSize - (even ? breaker / 2 : 0); v <= limit + (even ? breaker / 2 : 0); v += breaker + size) {
+            ctx.fillText(content, v, h);
+          }
         }
       }
 
-      const quality = document.getElementById('quality').value;
-      ctx.canvas.toBlob(
-        (e) => {
-          const url = URL.createObjectURL(e);
-          document.getElementById('imgsize').innerHTML = `(${Math.ceil(e.size / 1024)} KB)`;
-          document.getElementsByTagName('img')[0].src = url;
-          document.getElementById('imglink').href = url;
-          document.getElementById('savelink').href = url;
-        },
+      canvas.toBlob(
+        updateImage,
         'image/jpeg',
-        quality / 100
+        $('#quality').value / 100
       );
-    }
-    function createBitmap(blob, callback) {
-      var img = document.createElement('img');
-      img.addEventListener('load', function () {
-        callback(this);
-      });
-      img.src = URL.createObjectURL(blob);
-    }
+    };
 
-    function handleImageUpload(file) {
-      createBitmap(file, function (result) {
-        img = result;
-        repaint();
-      });
-      var newName = file.name.split('.');
+    const handleImageUpload = (file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        img = new Image();
+        img.onload = () => {
+          drawWatermark();
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      const newName = file.name.split('.');
       newName.splice(-1, 0, 'watermarked');
-      document.getElementById('imglink').download = newName.join('.');
-      document.getElementById('savelink').download = newName.join('.');
-    }
+      const fileName = newName.join('.');
+      imgLink.download = fileName;
+      saveLink.download = fileName;
+    };
 
-    var dropArea = document.getElementById('drop-area');
-    dropArea.addEventListener('dragover', function (e) {
+    document.addEventListener('change', (ev) => {
+      if (ev.target.type === 'file' && ev.target.files.length) {
+        handleImageUpload(ev.target.files[0]);
+      } else {
+        drawWatermark();
+      }
+    });
+
+    const dropArea = $('#drop-area');
+    dropArea.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropArea.style.backgroundColor = '#f2f2f2';
     });
-    dropArea.addEventListener('dragleave', function (e) {
+    dropArea.addEventListener('dragleave', (e) => {
       e.preventDefault();
       dropArea.style.backgroundColor = '';
     });
-    dropArea.addEventListener('drop', function (e) {
+    dropArea.addEventListener('drop', (e) => {
       e.preventDefault();
       dropArea.style.backgroundColor = '';
-      var file = e.dataTransfer.files[0];
-      handleImageUpload(file);
+      handleImageUpload(e.dataTransfer.files[0]);
     });
-    dropArea.addEventListener('click', function () {
-      document.getElementById('upload-input').click();
-    });
+    dropArea.addEventListener('click', () => $('#upload-input').click());
   </script>
 </body>
 
